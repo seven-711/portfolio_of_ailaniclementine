@@ -44,7 +44,7 @@ export default function RootLayout({
               window.OneSignal = window.OneSignal || [];
               OneSignal.push(function() {
                 OneSignal.init({
-                  appId: "YOUR_ONESIGNAL_APP_ID", // TODO: Replace with your actual OneSignal App ID
+                appId: "${process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID}",
                   safari_web_id: "YOUR_SAFARI_WEB_ID", // TODO: Optional
                   notifyButton: {
                     enable: true,
