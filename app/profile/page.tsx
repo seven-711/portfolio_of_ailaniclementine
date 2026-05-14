@@ -2,14 +2,31 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, ChevronLeft, Plus, Lock, Image as ImageIcon } from "lucide-react";
+import { MessageCircle, ChevronLeft, Lock, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 
 export default function ProfilePage() {
+  const { isSignedIn, isLoaded } = useUser();
+  const router = useRouter();
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [activeTab, setActiveTab] = useState<"posts" | "media">("posts");
+  const [isFollowing, setIsFollowing] = useState(true);
+
+  const handleFollowClick = () => {
+    if (!isSignedIn) {
+      router.push("/join");
+    } else {
+      setIsFollowing(!isFollowing);
+      console.log(isFollowing ? "Unfollowed!" : "Followed!");
+    }
+  };
+
+  if (!isLoaded) return null;
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-pink-500/30">
       {/* Container for mobile-first feel on desktop */}
@@ -67,16 +84,25 @@ export default function ProfilePage() {
             <div className="flex gap-2 sm:gap-3">
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                className="h-12 bg-white text-black px-5 sm:px-6 rounded-2xl font-bold text-sm sm:text-base hover:bg-neutral-200 transition-colors shadow-lg shadow-white/5 flex items-center justify-center shrink-0"
+                onClick={handleFollowClick}
+                className={`h-12 px-5 sm:px-6 rounded-2xl font-bold text-sm sm:text-base transition-colors shadow-lg flex items-center justify-center shrink-0 ${
+                  isSignedIn && isFollowing
+                    ? "bg-neutral-900 border border-white/10 text-white hover:bg-neutral-800 shadow-black/20" 
+                    : "bg-white text-black hover:bg-neutral-200 shadow-white/5"
+                }`}
               >
-                Follow for free
+                {isSignedIn && isFollowing ? "Unfollow" : "Follow for free"}
               </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                className="h-12 w-12 bg-neutral-900 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-neutral-800 transition-colors shrink-0"
-              >
-                <MessageCircle size={22} className="text-white" />
-              </motion.button>
+              {isSignedIn && (
+                <Link href="/messages">
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    className="h-12 w-12 bg-neutral-900 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-neutral-800 transition-colors shrink-0"
+                  >
+                    <MessageCircle size={22} className="text-white" />
+                  </motion.button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -97,6 +123,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
           </motion.div>
 
           {/* Bio Section */}
@@ -107,13 +134,13 @@ export default function ProfilePage() {
             className="mb-8"
           >
             <p className="text-neutral-400 text-sm leading-relaxed max-w-sm whitespace-pre-line">
-              Hey, I'm Ailani ✨ <br /> <br />
+              Hey, I'm Ailani :) <br /> <br />
               Freshman at UMiami 👩🏻‍🎓 <br />
               <br />
               Just started this page, so everything's free for now.
 
               Subscribe and send me a message for a little 
-              private treat made just for you.
+              private treat made just for you ❤️
             </p>
 
             <button 
@@ -148,7 +175,25 @@ export default function ProfilePage() {
               <Image src="/img/x.png" alt="X" width={20} height={20} className="w-5 h-5 opacity-60 hover:opacity-100 cursor-pointer transition-opacity" />
               <Image src="/img/tiktok.png" alt="TikTok" width={20} height={20} className="w-5 h-5 opacity-60 hover:opacity-100 cursor-pointer transition-opacity" />
             </div>
+
+            {/* Join CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55 }}
+              className="mt-5"
+            >
+              <Link href="/join">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full py-3.5 rounded-2xl bg-pink-500 hover:bg-pink-600 text-white font-bold text-sm tracking-wide transition-colors shadow-lg shadow-pink-500/20"
+                >
+                  Join for free
+                </motion.button>
+              </Link>
+            </motion.div>
           </motion.div>
+
 
           {/* Tabs */}
           <div className="border-b border-white/10 mb-4 flex pt-4">
@@ -180,7 +225,7 @@ export default function ProfilePage() {
             className="flex flex-col gap-6 pb-8"
           >
             {/* Post 1 */}
-            <div className="border border-white/10 rounded-2xl bg-surface-container-low overflow-hidden">
+            <div className="border border-white/10 rounded-2xl bg-[#121212] overflow-hidden">
               {/* Post Header */}
               <div className="p-4 flex items-start justify-between">
                 <div className="flex gap-3 items-center">
@@ -193,45 +238,50 @@ export default function ProfilePage() {
                 <span className="text-neutral-400 text-xs">3 days ago</span>
               </div>
               
-              {/* Post Caption (blurred text) */}
+              {/* Post Caption */}
               <div className="px-4 pb-4">
-                <div className="h-3.5 w-3/4 bg-neutral-500 rounded blur-sm opacity-50"></div>
+                {isSignedIn && isFollowing ? (
+                  <p className="text-sm text-white/90 leading-relaxed font-medium">Golden hour in Miami ☀️</p>
+                ) : (
+                  <div className="h-3.5 w-3/4 bg-neutral-500 rounded blur-sm opacity-50"></div>
+                )}
               </div>
 
-              {/* Locked Media Container */}
+              {/* Media Container */}
               <div className="relative w-full aspect-4/5 sm:aspect-square bg-black">
-                {/* Background blurred image */}
-                <img src="/img/ailani_blur_1.png" className="w-full h-full object-cover opacity-80" alt="Locked background" />
+                <img 
+                  src={isSignedIn && isFollowing ? "/img/ailani_1.jpg" : "/img/ailani_blur_1.png"} 
+                  className={`w-full h-full object-cover transition-all duration-700 ${isSignedIn && isFollowing ? 'opacity-100' : 'opacity-80'}`} 
+                  alt="Post content" 
+                />
                 
-                {/* Floating Unlock Panel (Centered) */}
-                <div className="absolute inset-0 flex items-center justify-center p-6">
-                  <div className="bg-white/10 backdrop-blur-xl rounded-2xl w-full max-w-[280px] pt-10 pb-6 px-6 flex flex-col items-center relative border border-white/10 shadow-2xl">
-                    
-                    {/* Floating Avatar on top of the panel */}
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
-                      <div className="w-16 h-16 rounded-full border-[3px] border-surface-bright overflow-hidden relative">
-                        <img src="/img/ailani_1.jpg" alt="Ailani" className="w-full h-full object-cover" />
+                {!(isSignedIn && isFollowing) && (
+                  <div className="absolute inset-0 flex items-center justify-center p-6">
+                    <div className="bg-white/10 backdrop-blur-xl rounded-2xl w-full max-w-[280px] pt-10 pb-6 px-6 flex flex-col items-center relative border border-white/10 shadow-2xl">
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
+                        <div className="w-16 h-16 rounded-full border-[3px] border-white/20 overflow-hidden relative">
+                          <img src="/img/ailani_1.jpg" alt="Ailani" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="bg-white rounded-full p-1 -mt-3 relative z-20 border-[3px] border-black">
+                          <Lock size={12} className="text-black fill-black stroke-2" />
+                        </div>
                       </div>
-                      <div className="bg-white rounded-full p-1 -mt-3 relative z-20 border-[3px] border-surface-bright">
-                        <Lock size={12} className="text-black fill-black stroke-2" />
+                      <h3 className="text-white font-bold text-lg mb-1 mt-2">Unlock to view</h3>
+                      <div className="flex items-center gap-1.5 text-white/80 mb-6">
+                        <ImageIcon size={16} className="text-white/80" />
+                        <span className="text-xs font-medium">1 Image</span>
                       </div>
+                      <button onClick={handleFollowClick} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
+                        View image
+                      </button>
                     </div>
-
-                    <h3 className="text-white font-bold text-lg mb-1 mt-2">Unlock to view</h3>
-                    <div className="flex items-center gap-1.5 text-white/80 mb-6">
-                      <ImageIcon size={16} className="text-white/80" />
-                      <span className="text-xs font-medium">1 Image</span>
-                    </div>
-                    <button className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
-                      View image
-                    </button>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
             {/* Post 2 */}
-            <div className="border border-white/10 rounded-2xl bg-surface-container-low overflow-hidden">
+            <div className="border border-white/10 rounded-2xl bg-[#121212] overflow-hidden">
               <div className="p-4 flex items-start justify-between">
                 <div className="flex gap-3 items-center">
                   <img src="/img/ailani_1.jpg" alt="Ailani" className="w-10 h-10 rounded-full object-cover" />
@@ -243,30 +293,90 @@ export default function ProfilePage() {
                 <span className="text-neutral-400 text-xs">5 days ago</span>
               </div>
               <div className="px-4 pb-4">
-                <div className="h-3.5 w-1/2 bg-neutral-500 rounded blur-sm opacity-50"></div>
+                {isSignedIn && isFollowing ? (
+                  <p className="text-sm text-white/90 leading-relaxed font-medium">Finally got my UMiami dorm settled in! 🎓✨</p>
+                ) : (
+                  <div className="h-3.5 w-1/2 bg-neutral-500 rounded blur-sm opacity-50"></div>
+                )}
               </div>
               <div className="relative w-full aspect-4/5 sm:aspect-square bg-black">
-                <img src="/img/ailani_blur_2.png" className="w-full h-full object-cover opacity-80" alt="Locked background" />
-                <div className="absolute inset-0 flex items-center justify-center p-6">
-                  <div className="bg-white/10 backdrop-blur-xl rounded-2xl w-full max-w-[280px] pt-10 pb-6 px-6 flex flex-col items-center relative border border-white/10 shadow-2xl">
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
-                      <div className="w-16 h-16 rounded-full border-[3px] border-surface-bright overflow-hidden relative">
-                        <img src="/img/ailani_1.jpg" alt="Ailani" className="w-full h-full object-cover" />
+                <img 
+                  src={isSignedIn && isFollowing ? "/img/ailani_2.jpg" : "/img/ailani_blur_2.png"} 
+                  className={`w-full h-full object-cover transition-all duration-700 ${isSignedIn && isFollowing ? 'opacity-100' : 'opacity-80'}`} 
+                  alt="Post content" 
+                />
+                {!(isSignedIn && isFollowing) && (
+                  <div className="absolute inset-0 flex items-center justify-center p-6">
+                    <div className="bg-white/10 backdrop-blur-xl rounded-2xl w-full max-w-[280px] pt-10 pb-6 px-6 flex flex-col items-center relative border border-white/10 shadow-2xl">
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
+                        <div className="w-16 h-16 rounded-full border-[3px] border-white/20 overflow-hidden relative">
+                          <img src="/img/ailani_1.jpg" alt="Ailani" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="bg-white rounded-full p-1 -mt-3 relative z-20 border-[3px] border-black">
+                          <Lock size={12} className="text-black fill-black stroke-2" />
+                        </div>
                       </div>
-                      <div className="bg-white rounded-full p-1 -mt-3 relative z-20 border-[3px] border-surface-bright">
-                        <Lock size={12} className="text-black fill-black stroke-2" />
+                      <h3 className="text-white font-bold text-lg mb-1 mt-2">Unlock to view</h3>
+                      <div className="flex items-center gap-1.5 text-white/80 mb-6">
+                        <ImageIcon size={16} className="text-white/80" />
+                        <span className="text-xs font-medium">2 Images</span>
                       </div>
+                      <button onClick={handleFollowClick} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
+                        View image
+                      </button>
                     </div>
-                    <h3 className="text-white font-bold text-lg mb-1 mt-2">Unlock to view</h3>
-                    <div className="flex items-center gap-1.5 text-white/80 mb-6">
-                      <ImageIcon size={16} className="text-white/80" />
-                      <span className="text-xs font-medium">2 Images</span>
-                    </div>
-                    <button className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
-                      View image
-                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Post 3 */}
+            <div className="border border-white/10 rounded-2xl bg-[#121212] overflow-hidden">
+              <div className="p-4 flex items-start justify-between">
+                <div className="flex gap-3 items-center">
+                  <img src="/img/ailani_1.jpg" alt="Ailani" className="w-10 h-10 rounded-full object-cover" />
+                  <div>
+                    <h4 className="font-bold text-white text-sm">Ailani Clementine</h4>
+                    <p className="text-neutral-400 text-xs">@ailani.clementine</p>
                   </div>
                 </div>
+                <span className="text-neutral-400 text-xs">1 week ago</span>
+              </div>
+              <div className="px-4 pb-4">
+                {isSignedIn && isFollowing ? (
+                  <p className="text-sm text-white/90 leading-relaxed font-medium">Miami nights are the best ✨</p>
+                ) : (
+                  <div className="h-3.5 w-2/3 bg-neutral-500 rounded blur-sm opacity-50"></div>
+                )}
+              </div>
+              <div className="relative w-full aspect-4/5 sm:aspect-square bg-black">
+                <img 
+                  src={isSignedIn && isFollowing ? "/img/ailani_3.jpg" : "/img/ailani_blur_3.png"} 
+                  className={`w-full h-full object-cover transition-all duration-700 ${isSignedIn && isFollowing ? 'opacity-100' : 'opacity-80'}`} 
+                  alt="Post content" 
+                />
+                {!(isSignedIn && isFollowing) && (
+                  <div className="absolute inset-0 flex items-center justify-center p-6">
+                    <div className="bg-white/10 backdrop-blur-xl rounded-2xl w-full max-w-[280px] pt-10 pb-6 px-6 flex flex-col items-center relative border border-white/10 shadow-2xl">
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
+                        <div className="w-16 h-16 rounded-full border-[3px] border-white/20 overflow-hidden relative">
+                          <img src="/img/ailani_1.jpg" alt="Ailani" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="bg-white rounded-full p-1 -mt-3 relative z-20 border-[3px] border-black">
+                          <Lock size={12} className="text-black fill-black stroke-2" />
+                        </div>
+                      </div>
+                      <h3 className="text-white font-bold text-lg mb-1 mt-2">Unlock to view</h3>
+                      <div className="flex items-center gap-1.5 text-white/80 mb-6">
+                        <ImageIcon size={16} className="text-white/80" />
+                        <span className="text-xs font-medium">1 Image</span>
+                      </div>
+                      <button onClick={handleFollowClick} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
+                        View image
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -283,19 +393,19 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-3">
                 <div className="rounded-2xl overflow-hidden aspect-square bg-neutral-900 group relative">
                   <img
-                    src="/img/ailani_blur_2.png"
-                    alt="Post 1 Locked"
+                    src={isSignedIn && isFollowing ? "/img/ailani_2.jpg" : "/img/ailani_blur_2.png"}
+                    alt="Post 1"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                  {!(isSignedIn && isFollowing) && <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />}
                 </div>
                 <div className="rounded-2xl overflow-hidden aspect-3/5 bg-neutral-900 group relative">
                   <img
-                    src="/img/ailani_blur_3.png"
-                    alt="Post 2 Locked"
+                    src={isSignedIn && isFollowing ? "/img/ailani_3.jpg" : "/img/ailani_blur_3.png"}
+                    alt="Post 2"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                  {!(isSignedIn && isFollowing) && <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />}
                 </div>
               </div>
               
@@ -303,19 +413,19 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-3">
                 <div className="rounded-2xl overflow-hidden aspect-4/5 bg-neutral-900 group relative">
                   <img
-                    src="/img/ailani_blur_1.png"
-                    alt="Post 3 Locked"
+                    src={isSignedIn && isFollowing ? "/img/ailani_1.jpg" : "/img/ailani_blur_1.png"}
+                    alt="Post 3"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                  {!(isSignedIn && isFollowing) && <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />}
                 </div>
                 <div className="rounded-2xl overflow-hidden aspect-square bg-neutral-900 group relative">
                   <img
-                    src="/img/ailani_blur_2.png"
-                    alt="Post 4 Locked"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    src="/img/ailani_2.jpg"
+                    alt="Post 4"
+                    className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isSignedIn && isFollowing ? '' : 'filter blur-md opacity-50'}`}
                   />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                  {!(isSignedIn && isFollowing) && <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />}
                 </div>
               </div>
             </motion.div>
