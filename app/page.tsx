@@ -41,9 +41,7 @@ export default function Home() {
             <div className="flex items-center gap-6 mb-stack-sm bg-black/30 backdrop-blur-md px-6 py-3 rounded-full border border-white/10">
               <Image src="/img/instagram.png" alt="Instagram" width={28} height={28} className="w-7 h-7 object-contain hover:scale-110 transition-transform cursor-pointer" />
               <Image src="/img/facebook.png" alt="Facebook" width={28} height={28} className="w-7 h-7 object-contain hover:scale-110 transition-transform cursor-pointer" />
-              <div className="bg-amber-100">
-                <Image src="/img/x.png" alt="X" width={28} height={28} className="w-7 h-7 object-contain hover:scale-110 transition-transform cursor-pointer" />
-              </div>
+              <Image src="/img/x.png" alt="X" width={28} height={28} className="w-7 h-7 object-contain hover:scale-110 transition-transform cursor-pointer" />
               <Image src="/img/tiktok.png" alt="TikTok" width={28} height={28} className="w-7 h-7 object-contain hover:scale-110 transition-transform cursor-pointer" />
               <Image src="/img/snapchat.png" alt="Snapchat" width={28} height={28} className="w-7 h-7 object-contain hover:scale-110 transition-transform cursor-pointer" />
             </div>
