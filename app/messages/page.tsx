@@ -538,14 +538,14 @@ export default function MessagesPage() {
             {isExpired ? (
               <button 
                 onClick={() => setShowSubModal(true)}
-                className="absolute inset-0 bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white font-black text-sm uppercase tracking-widest transition-all"
+                className="absolute inset-0 bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white font-black text-sm uppercase tracking-widest transition-all z-20"
               >
                 Subscribe to reply
               </button>
             ) : (
               <button 
                 onClick={handleSend}
-                className="w-11 h-11 flex items-center justify-center rounded-full bg-pink-500 text-white shadow-lg hover:bg-pink-600 active:scale-90 transition-all duration-300 shrink-0"
+                className="w-11 h-11 flex-none flex items-center justify-center rounded-full bg-pink-500 text-white shadow-lg hover:bg-pink-600 active:scale-95 transition-all duration-300 relative z-10"
               >
                 <Send size={18} className="ml-0.5" />
               </button>
