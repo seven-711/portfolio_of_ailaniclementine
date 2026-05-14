@@ -57,13 +57,20 @@
   --spacing-container-padding-desktop: 40px;
   --spacing-stack-sm: 12px;
 
-  --font-display-lg: var(--font-plus-jakarta-sans), sans-serif;
-  --font-headline-lg-mobile: var(--font-plus-jakarta-sans), sans-serif;
-  --font-title-md: var(--font-plus-jakarta-sans), sans-serif;
-  --font-body-sm: var(--font-plus-jakarta-sans), sans-serif;
-  --font-body-lg: var(--font-plus-jakarta-sans), sans-serif;
-  --font-headline-lg: var(--font-plus-jakarta-sans), sans-serif;
-  --font-label-caps: var(--font-plus-jakarta-sans), sans-serif;
+  --font-sans: var(--font-poppins), sans-serif;
+  --font-display-lg: var(--font-poppins), sans-serif;
+  --font-headline-lg-mobile: var(--font-poppins), sans-serif;
+  --font-title-md: var(--font-poppins), sans-serif;
+  --font-body-sm: var(--font-poppins), sans-serif;
+  --font-body-lg: var(--font-poppins), sans-serif;
+  --font-headline-lg: var(--font-poppins), sans-serif;
+  --font-label-caps: var(--font-poppins), sans-serif;
+}
+
+@layer base {
+  html, body {
+    font-family: var(--font-poppins), sans-serif;
+  }
 }
 
 @layer utilities {

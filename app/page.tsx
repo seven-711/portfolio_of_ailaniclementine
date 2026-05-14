@@ -17,9 +17,6 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <Image src="/img/ailani_logo.png" alt="Ailani Logo" width={100} height={36} className="w-auto h-[86px] object-contain" />
         </div>
-        <Link href="/profile" className="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-black/60 transition-colors">
-          <User size={24} className="text-white" />
-        </Link>
       </header>
 
       <main className="grow flex flex-col w-full bg-black">
