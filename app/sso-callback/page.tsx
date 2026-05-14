@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthenticateWithRedirectCallback } from "@clerk/nextjs";
+import { Suspense } from "react";
 
 export default function SSOCallbackPage() {
   return (
@@ -9,7 +10,9 @@ export default function SSOCallbackPage() {
         <div className="w-6 h-6 border-2 border-pink-500/30 border-t-pink-500 rounded-full animate-spin" />
         <p className="text-neutral-500 text-sm">Signing you in…</p>
       </div>
-      <AuthenticateWithRedirectCallback />
+      <Suspense>
+        <AuthenticateWithRedirectCallback />
+      </Suspense>
     </div>
   );
 }

@@ -5,10 +5,10 @@ import { useSignIn, useSignUp, useClerk } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ChevronLeft, Star, Lock, Sparkles, Eye, EyeOff } from "lucide-react";
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import { useRouter } from "next/navigation";
 
-export default function JoinPage() {
+function JoinContent() {
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
   const isSignIn = mode === "signin";
@@ -296,5 +296,17 @@ export default function JoinPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-pink-500/30 border-t-pink-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <JoinContent />
+    </Suspense>
   );
 }
