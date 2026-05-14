@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+
+import Link from "next/link";
+import { X, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import Image from "next/image";
@@ -15,11 +17,14 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <Image src="/img/ailani_logo.png" alt="Ailani Logo" width={100} height={36} className="w-auto h-[86px] object-contain" />
         </div>
+        <Link href="/profile" className="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-black/60 transition-colors">
+          <User size={24} className="text-white" />
+        </Link>
       </header>
 
       <main className="grow flex flex-col w-full bg-black">
         {/* Hero Section with Background Image */}
-        <section className="relative h-[650px] w-full overflow-hidden flex-shrink-0">
+        <section className="relative h-[650px] w-full overflow-hidden shrink-0">
           <Image
             alt="Portrait of Ailani Clementine"
             className="absolute inset-0 w-full h-full object-cover"
@@ -75,29 +80,32 @@ export function PremiumCard() {
       <motion.div
         whileTap={{ scale: 0.98 }}
         onClick={() => setOpen(true)}
-        className="w-full relative overflow-hidden rounded-xl cursor-pointer shadow-xl shadow-primary/20"
+        className="w-full relative overflow-hidden rounded-xl cursor-pointer group"
       >
         {/* Background Image */}
         <img
-          src="https://images.unsplash.com/photo-1494790108377-be9c29b293f?q=80&w=1200"
-          alt=""
-          className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 ${
+          src="/img/ailani_3.jpg"
+          alt="DM ME"
+          className={`absolute inset-0 h-80 w-full object-cover object-center transition-all duration-500 ${
             open
               ? "scale-110 blur-md brightness-50"
-              : "scale-100 blur-0 brightness-90"
+              : "scale-100 blur-0 brightness-90 group-hover:scale-110"
           }`}
         />
 
+        {/* Pink Hover Overlay */}
+        <div className={`absolute inset-0 transition-opacity duration-500 z-5 ${open ? "opacity-0" : "opacity-0 group-hover:opacity-100 bg-linear-to-t from-pink-400/60 to-transparent"}`} />
+
         {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/30" />
+        <div className={`absolute inset-0 transition-colors z-10 ${open ? "bg-black/40" : "bg-black/50 group-hover:bg-black/30"}`} />
 
         {/* Default Content */}
         <div className={`relative z-10 p-6 flex flex-col items-center justify-center text-white min-h-[220px] transition-opacity duration-300 ${open ? 'opacity-0' : 'opacity-100'}`}>
-          <h3 className="font-display-lg text-[32px] font-bold tracking-tight mb-1 flex items-center gap-2">
-            DM ME 💋
+          <h3 className="font-display-lg text-3xl font-bold tracking-tight mb-1 flex items-center gap-5">
+            dm me 💋
           </h3>
 
-          <p className="font-label-caps tracking-widest opacity-90 uppercase">
+          <p className="font-label-caps tracking-widest opacity-60">
             click here
           </p>
         </div>
@@ -109,7 +117,7 @@ export function PremiumCard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-30 flex flex-col justify-between p-5 bg-black/30 backdrop-blur-[2px]"
+              className="absolute inset-0 z-30 flex flex-col justify-between pt-2 pl-2 bg-black/30 backdrop-blur-[2px]"
             >
               {/* Close Button */}
               <button
@@ -117,17 +125,17 @@ export function PremiumCard() {
                   e.stopPropagation();
                   setOpen(false);
                 }}
-                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white"
+                className="w-10 h-10 rounded-full pt-2 flex items-center justify-center text-white"
               >
-                <X size={18} />
+                <X size={25} />
               </button>
 
               {/* Centered Text */}
               <motion.div
-                initial={{ y: 15, opacity: 0 }}
+                initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="text-center text-white"
+                className="text-center text-white mb-10"
               >
                 <h2 className="text-3xl font-bold mb-3">
                   Mature Content
@@ -138,9 +146,9 @@ export function PremiumCard() {
                   for adults only.
                 </p>
 
-                <button className="mt-6 rounded-full bg-white text-black px-6 py-4 text-sm font-semibold active:scale-95 transition">
+                <Link href="/profile" className="mt-3 inline-block rounded-full bg-white text-black px-6 py-4 text-sm font-semibold active:scale-95 transition">
                   Continue (18+)
-                </button>
+                </Link>
               </motion.div>
 
               {/* Spacer */}
@@ -161,7 +169,7 @@ export function ExclusiveContentCard() {
       <motion.div
         whileTap={{ scale: 0.98 }}
         onClick={() => setOpen(true)}
-        className="w-full relative overflow-hidden rounded-xl cursor-pointer shadow-xl shadow-primary/20 border border-white/10"
+        className="w-full relative overflow-hidden rounded-xl cursor-pointer group"
       >
         {/* Background Image */}
         <img
@@ -170,17 +178,20 @@ export function ExclusiveContentCard() {
           className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 ${
             open
               ? "scale-110 blur-md brightness-50"
-              : "scale-100 blur-0 brightness-90"
+              : "scale-100 blur-0 brightness-90 group-hover:scale-110"
           }`}
         />
 
+        {/* Pink Hover Overlay */}
+        <div className={`absolute inset-0 transition-opacity duration-500 z-5 ${open ? "opacity-0" : "opacity-0 group-hover:opacity-100 bg-linear-to-t from-pink-400/60 to-transparent"}`} />
+
         {/* Dark Overlay */}
-        <div className={`absolute inset-0 transition-colors ${open ? "bg-black/40" : "bg-black/50 hover:bg-black/30"}`} />
+        <div className={`absolute inset-0 transition-colors z-10 ${open ? "bg-black/40" : "bg-black/50 group-hover:bg-black/30"}`} />
 
         {/* Default Content */}
         <div className={`relative z-10 p-8 flex flex-col items-center justify-center text-white min-h-[220px] transition-opacity duration-300 ${open ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-          <p className="font-title-md text-center text-white drop-shadow-lg text-xl font-bold">
-            exclusive content <span className="block text-primary text-body-sm font-bold mt-1 drop-shadow-md">(50% off - limited time only)</span>
+          <p className="font-title-md text-center text-white drop-shadow-lg text-3xl font-bold">
+            exclusive content <span className="block text-gray opacity-50 text-body-sm font-bold mt-1 drop-shadow-md">(50% off - limited time only)</span>
           </p>
         </div>
 
@@ -191,7 +202,7 @@ export function ExclusiveContentCard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-30 flex flex-col justify-between p-5 bg-black/30 backdrop-blur-[2px]"
+              className="absolute inset-0 z-30 flex flex-col justify-between pt-2 pl-2 bg-black/30 backdrop-blur-[2px]"
             >
               {/* Close Button */}
               <button
@@ -199,9 +210,9 @@ export function ExclusiveContentCard() {
                   e.stopPropagation();
                   setOpen(false);
                 }}
-                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white"
+                className="w-10 h-10 rounded-full flex pt-2 items-center justify-center text-white"
               >
-                <X size={18} />
+                <X size={25} />
               </button>
 
               {/* Centered Text */}
@@ -209,9 +220,9 @@ export function ExclusiveContentCard() {
                 initial={{ y: 15, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="text-center text-white pb-2"
+                className="text-center text-white pb-2 mb-10"
               >
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className="text-3xl font-bold mb-2">
                   Mature Content
                 </h2>
 
@@ -220,9 +231,9 @@ export function ExclusiveContentCard() {
                   for adults only.
                 </p>
 
-                <button className="rounded-full bg-white text-black px-6 py-3 text-sm font-semibold active:scale-95 transition">
+                <Link href="/profile" className="inline-block rounded-full bg-white text-black px-6 py-3 text-sm font-semibold active:scale-95 transition">
                   Continue (18+)
-                </button>
+                </Link>
               </motion.div>
             </motion.div>
           )}
