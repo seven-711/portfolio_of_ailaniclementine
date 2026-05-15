@@ -505,7 +505,7 @@ export default function MessagesPage() {
                     <img src="/img/ailani_1.jpg" alt="Ailani" className="w-full h-full object-cover" />
                   </div>
                   <div className="bg-neutral-900 border border-white/10 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm relative min-w-0">
-                    <p className="text-[16px] text-white leading-relaxed wrap-break-words whitespace-pre-wrap">{msg.text}</p>
+                    <p className="text-[16px] text-white leading-relaxed break-words break-all whitespace-pre-wrap">{msg.text}</p>
                     <span className="block text-[10px] text-right mt-1 text-neutral-400">{msg.time}</span>
                   </div>
                 </div>
@@ -515,7 +515,7 @@ export default function MessagesPage() {
             return (
               <div key={msg.id} className="flex flex-col gap-2 items-end">
                 <div className="bg-pink-600 text-white px-4 py-3 rounded-2xl rounded-br-none shadow-lg max-w-[80%] min-w-0">
-                  <p className="text-[16px] leading-relaxed wrap-break-words whitespace-pre-wrap">{msg.text}</p>
+                  <p className="text-[16px] leading-relaxed break-words break-all whitespace-pre-wrap">{msg.text}</p>
                   <div className="flex items-center justify-end gap-1 mt-1">
                     <span className="text-[10px] text-white/70">{msg.time}</span>
                     <CheckCheck size={14} className="text-white/90" />
@@ -572,7 +572,7 @@ export default function MessagesPage() {
                 onClick={handleSend}
                 className="w-11 h-11 flex-none flex items-center justify-center rounded-full bg-pink-500 text-white shadow-lg hover:bg-pink-600 active:scale-95 transition-all duration-300 relative z-10"
               >
-                <Send size={18} className="ml-0.5" />
+                <Send size={18} className="ml-0.5 shrink-0" />
               </button>
             )}
           </div>
