@@ -1,30 +1,28 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, MoreVertical, Zap, Heart, Sparkles, EyeOff, Info, CheckCheck, Plus, Send, BellOff, Archive, X, ShieldCheck, MessageCircle, Clock, Check, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, MoreVertical, Zap, Heart, Sparkles, EyeOff, Info, CheckCheck, Plus, Send, BellOff, Archive, X, ShieldCheck, MessageCircle, Clock, Check, Image as ImageIcon, Lock as LockIcon } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProfile } from "@/hooks/useProfile";
+import { useUser } from "@clerk/nextjs";
+import OptimizedImage from "@/components/media/OptimizedImage";
+import OptimizedVideo from "@/components/media/OptimizedVideo";
 
 interface Message {
   id: string;
   sender: "ai" | "user";
-  text: string;
+  text?: string;
+  url?: string; // For images (publicId)
+  playbackId?: string; // For videos
   time: string;
-  type?: "text" | "photo" | "notification";
+  type: "text" | "photo" | "video" | "notification";
 }
 
 export default function MessagesPage() {
+  const { isSignedIn, user, isLoaded: userLoaded } = useUser();
   const [activeTab, setActiveTab] = useState<"messages" | "media">("messages");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome-1",
-      sender: "ai",
-      text: "hey stranger 👋 thanks for following.. dm me i don't bite",
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      type: "text",
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const [input, setInput] = useState("");
   const { profile, loading: profileLoading, updateSubscription } = useProfile();
@@ -39,6 +37,10 @@ export default function MessagesPage() {
   const [subStep, setSubStep] = useState<'options' | 'checkout'>('options');
   const [email, setEmail] = useState("");
   const ws = useRef<WebSocket | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,6 +63,37 @@ export default function MessagesPage() {
     const interval = setInterval(checkSession, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Load chat history when user is loaded
+  useEffect(() => {
+    if (!userLoaded) return;
+
+    const storageKey = user ? `chat_history_${user.id}` : "chat_history_guest";
+    const savedMessages = localStorage.getItem(storageKey);
+    
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    } else {
+      // Default welcome message
+      setMessages([
+        {
+          id: "welcome-1",
+          sender: "ai",
+          text: "hey stranger 👋 thanks for following.. dm me i don't bite",
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: "text",
+        }
+      ]);
+    }
+  }, [user, userLoaded]);
+
+  // Save chat history
+  useEffect(() => {
+    if (userLoaded && messages.length > 0) {
+      const storageKey = user ? `chat_history_${user.id}` : "chat_history_guest";
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    }
+  }, [messages, user, userLoaded]);
 
   useEffect(() => {
     // We use a public echo server to demonstrate a functional WebSocket connection
@@ -97,22 +130,147 @@ export default function MessagesPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim() || !canChat) return;
+  const handleSend = async () => {
+    if (!canChat) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      sender: "user",
-      text: input.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      type: "text",
-    };
+    // If there's a file, upload it
+    if (selectedFiles.length > 0) {
+      handleConfirmUpload();
+    }
 
-    setMessages(prev => [...prev, newMessage]);
-    setInput("");
+    // If there's text, send it
+    if (input.trim()) {
+      const newMessage: Message = {
+        id: Date.now().toString() + "_text",
+        sender: "user",
+        text: input.trim(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: "text",
+      };
+      setMessages(prev => [...prev, newMessage]);
+      setInput("");
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send(newMessage.text || "");
+      }
+    }
+  };
 
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(newMessage.text);
+  const handlePlusClick = () => {
+    if (!canChat) {
+      setShowSubModal(true);
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newUrls = files.map(file => URL.createObjectURL(file));
+    setPreviewUrls(prev => [...prev, ...newUrls]);
+    setSelectedFiles(prev => [...prev, ...files]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    URL.revokeObjectURL(previewUrls[index]);
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleConfirmUpload = async () => {
+    if (selectedFiles.length === 0) return;
+
+    const filesToUpload = [...selectedFiles];
+    setSelectedFiles([]);
+    setPreviewUrls([]);
+    setIsUploading(true);
+
+    try {
+      for (const file of filesToUpload) {
+        const isVideo = file.type.startsWith("video/");
+        const isImage = file.type.startsWith("image/");
+
+      if (isVideo) {
+        // 1. Get Mux upload URL
+        const res = await fetch("/api/upload/mux", { method: "POST" });
+        const { url, id } = await res.json();
+
+        // 2. Upload file to Mux
+        await fetch(url, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type },
+        });
+
+        // 3. Poll for asset readiness (simplified for now - we'll just use a placeholder playbackId if we don't have it yet, 
+        // but Mux usually takes a bit. In a real app, you'd use a webhook or poll.
+        // For now, let's assume we store the upload ID and it'll show up later, 
+        // OR we just show a "Processing" state.)
+        
+        // Note: The upload ID is NOT the playback ID. We need the playback ID.
+        // For this demo, I'll add a message that says "Video processing..."
+        const newMessage: Message = {
+          id: Date.now().toString() + "_" + Math.random().toString(36).substring(7),
+          sender: "user",
+          playbackId: "", // Empty for now, will show processing
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: "video",
+        };
+        setMessages(prev => [...prev, newMessage]);
+
+      } else if (isImage) {
+        // 1. Get Cloudinary signature
+        const res = await fetch("/api/upload/cloudinary", { method: "POST" });
+        const { signature, timestamp, cloudName, apiKey } = await res.json();
+
+        if (!cloudName || !signature || !apiKey) {
+          throw new Error("Cloudinary configuration missing. Check your environment variables.");
+        }
+
+        // 2. Upload to Cloudinary
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("signature", signature);
+        formData.append("timestamp", timestamp.toString());
+        formData.append("api_key", apiKey);
+        formData.append("folder", "ailani_clementine");
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          { method: "POST", body: formData }
+        );
+        
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json();
+          console.error("Cloudinary upload failed:", errorData);
+          throw new Error(errorData.error?.message || "Upload failed");
+        }
+
+        const uploadData = await uploadRes.json();
+        console.log("Cloudinary upload success:", uploadData);
+
+        if (uploadData.public_id) {
+          const newMessage: Message = {
+            id: Date.now().toString() + "_" + Math.random().toString(36).substring(7),
+            sender: "user",
+            url: uploadData.public_id,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: "photo",
+          };
+          setMessages(prev => [...prev, newMessage]);
+        } else {
+          throw new Error("No public_id returned from Cloudinary");
+        }
+      }
+    }
+  } catch (error: any) {
+      console.error("Upload process error:", error);
+      alert(`Failed to upload media: ${error.message || "Unknown error"}`);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -435,6 +593,7 @@ export default function MessagesPage() {
           )}
         </AnimatePresence>
 
+
         {/* Tab Bar */}
         <div className="flex border-b border-white/10 sticky top-[73px] z-40 bg-black/80 backdrop-blur-xl">
           <button
@@ -483,16 +642,65 @@ export default function MessagesPage() {
             }
 
             if (msg.type === "photo") {
+              const isUser = msg.sender === "user";
               return (
-                <div key={msg.id} className="ml-10 max-w-[70%]">
+                <div key={msg.id} className={`${isUser ? 'self-end' : 'ml-10'} max-w-[70%]`}>
                   <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 group cursor-pointer shadow-xl">
-                    <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center">
-                      <div className="w-12 h-12 rounded-full border border-white/50 flex items-center justify-center mb-4 bg-black/40">
-                        <EyeOff size={24} className="text-white" />
+                    {!isUser && !(isSignedIn && profile?.is_subscribed) && (
+                      <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center">
+                        <div className="w-12 h-12 rounded-full border border-white/50 flex items-center justify-center mb-4 bg-black/40">
+                          <EyeOff size={24} className="text-white" />
+                        </div>
+                        <p className="font-bold text-white drop-shadow-md text-[20px]">Your eyes only</p>
                       </div>
-                      <p className="font-bold text-white drop-shadow-md text-[20px]">Your eyes only</p>
-                    </div>
-                    <img src="/img/ailani_blur_1.png" alt="Locked photo" className="w-full h-full object-cover scale-110 filter blur-sm" />
+                    )}
+                    <OptimizedImage 
+                      src={msg.url || "/img/ailani_blur_1.png"}
+                      alt="Media content" 
+                      width={400}
+                      height={500}
+                      className={`w-full h-full object-cover ${!isUser && !(isSignedIn && profile?.is_subscribed) ? 'scale-110 filter blur-sm' : ''}`} 
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-1 mt-1">
+                    <span className="text-[10px] text-neutral-400">{msg.time}</span>
+                    {isUser && <CheckCheck size={14} className="text-pink-500" />}
+                  </div>
+                </div>
+              );
+            }
+
+            if (msg.type === "video") {
+              const isUser = msg.sender === "user";
+              return (
+                <div key={msg.id} className={`${isUser ? 'self-end' : 'ml-10'} max-w-[85%] w-full`}>
+                  <div className="relative rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 shadow-xl">
+                    {!isUser && !(isSignedIn && profile?.is_subscribed) && (
+                      <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-2xl flex flex-col items-center justify-center p-6 text-center">
+                        <div className="w-12 h-12 rounded-full border border-white/50 flex items-center justify-center mb-4 bg-black/40">
+                          <LockIcon size={24} className="text-white" />
+                        </div>
+                        <p className="font-bold text-white drop-shadow-md text-[20px]">Premium Video</p>
+                        <p className="text-white/60 text-xs mt-2 uppercase tracking-widest font-black">Subscribe to watch</p>
+                      </div>
+                    )}
+                    {!msg.playbackId ? (
+                      <div className="aspect-video bg-black/80 flex flex-col items-center justify-center p-6 text-center gap-3">
+                        <div className="w-10 h-10 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin" />
+                        <p className="text-[14px] font-bold text-white/60 uppercase tracking-widest">Processing Video...</p>
+                      </div>
+                    ) : (
+                      <OptimizedVideo 
+                        playbackId={msg.playbackId || ""}
+                        autoPlay={false}
+                        muted={true}
+                        className={!isUser && !(isSignedIn && profile?.is_subscribed) ? 'filter blur-xl opacity-50' : ''}
+                      />
+                    )}
+                  </div>
+                  <div className="flex items-center justify-end gap-1 mt-1">
+                    <span className="text-[10px] text-neutral-400">{msg.time}</span>
+                    {isUser && <CheckCheck size={14} className="text-pink-500" />}
                   </div>
                 </div>
               );
@@ -505,7 +713,7 @@ export default function MessagesPage() {
                     <img src="/img/ailani_1.jpg" alt="Ailani" className="w-full h-full object-cover" />
                   </div>
                   <div className="bg-neutral-900 border border-white/10 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm relative min-w-0">
-                    <p className="text-[16px] text-white leading-relaxed break-words break-all whitespace-pre-wrap">{msg.text}</p>
+                    <p className="text-[16px] text-white leading-relaxed wrap-break-word whitespace-pre-wrap">{msg.text}</p>
                     <span className="block text-[10px] text-right mt-1 text-neutral-400">{msg.time}</span>
                   </div>
                 </div>
@@ -515,7 +723,7 @@ export default function MessagesPage() {
             return (
               <div key={msg.id} className="flex flex-col gap-2 items-end">
                 <div className="bg-pink-600 text-white px-4 py-3 rounded-2xl rounded-br-none shadow-lg max-w-[80%] min-w-0">
-                  <p className="text-[16px] leading-relaxed break-words break-all whitespace-pre-wrap">{msg.text}</p>
+                  <p className="text-[16px] leading-relaxed wrap-break-word whitespace-pre-wrap">{msg.text}</p>
                   <div className="flex items-center justify-end gap-1 mt-1">
                     <span className="text-[10px] text-white/70">{msg.time}</span>
                     <CheckCheck size={14} className="text-white/90" />
@@ -524,6 +732,18 @@ export default function MessagesPage() {
               </div>
             );
           })}
+          {isUploading && (
+            <div className="flex flex-col gap-2 items-end animate-pulse">
+              <div className="bg-neutral-800 text-white/50 px-4 py-3 rounded-2xl rounded-br-none border border-white/5">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="text-xs font-bold uppercase tracking-widest ml-2">Uploading media...</span>
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} className="pb-4" />
         </section>
         )}
@@ -547,35 +767,80 @@ export default function MessagesPage() {
         {/* Bottom Input Bar - only visible on Messages tab */}
         {activeTab === "messages" && (
         <div className="absolute bottom-0 left-0 w-full z-50 p-4 bg-linear-to-t from-black via-black/90 to-transparent pb-8">
-          <div className="bg-white/5 backdrop-blur-xl rounded-full p-1.5 flex items-center gap-1 border border-white/10 shadow-2xl overflow-hidden relative group transition-all duration-300 focus-within:bg-white/10 focus-within:border-white/20">
-            <button disabled={!canChat} className={`w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all shrink-0 text-white/60 hover:text-white ${!canChat ? 'opacity-20' : ''}`}>
-              <Plus size={20} />
-            </button>
-            <input 
-              className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[14px] text-white placeholder:text-white/30 px-2 min-w-0 ${!canChat ? 'opacity-20' : ''}`} 
-              placeholder={!canChat ? "Chat locked" : "Type something here..."}
-              type="text"
-              value={input}
-              disabled={!canChat}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            />
-            {!canChat ? (
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            className="hidden" 
+            accept="image/*,video/*"
+            multiple
+          />
+          <div className={`bg-white/5 backdrop-blur-xl ${previewUrls.length > 0 ? 'rounded-3xl' : 'rounded-full'} p-1.5 flex flex-col gap-2 border border-white/10 shadow-2xl overflow-hidden relative group transition-all duration-300 focus-within:bg-white/10 focus-within:border-white/20`}>
+            <AnimatePresence>
+              {previewUrls.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="flex gap-2 overflow-x-auto px-2 pt-2 pb-1 scrollbar-hide no-scrollbar"
+                >
+                  {previewUrls.map((url, index) => (
+                    <motion.div 
+                      key={url}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="relative w-20 h-20 rounded-2xl overflow-hidden border border-white/20 bg-black/40 shadow-inner shrink-0"
+                    >
+                      {selectedFiles[index]?.type.startsWith('video/') ? (
+                        <video src={url} className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={url} className="w-full h-full object-cover" alt="Preview" />
+                      )}
+                      <button 
+                        onClick={() => removeFile(index)} 
+                        className="absolute top-1 right-1 bg-black/60 backdrop-blur-md rounded-full p-1.5 text-white hover:bg-black/80 transition-colors shadow-lg"
+                      >
+                        <X size={12} />
+                      </button>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            <div className="flex items-center gap-1 w-full">
               <button 
-                onClick={() => setShowSubModal(true)}
-                className="absolute inset-0 bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white font-black text-[12px] uppercase tracking-widest transition-all z-20"
-              >
-                Subscribe to reply
+                onClick={handlePlusClick}
+                disabled={isUploading}
+                className={`w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all shrink-0 text-white/60 hover:text-white ${isUploading ? 'opacity-20 cursor-not-allowed' : ''}`}>
+                <Plus size={20} className={isUploading ? 'animate-spin' : ''} />
               </button>
-            ) : (
-              <button 
-                onClick={handleSend}
-                disabled={!input.trim()}
-                className={`w-9 h-9 flex-none flex items-center justify-center rounded-full transition-all duration-300 relative z-10 ${input.trim() ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 scale-100' : 'bg-transparent text-pink-500/50 scale-90'}`}
-              >
-                <Send size={16} className={`${input.trim() ? 'ml-0.5' : ''} shrink-0`} />
-              </button>
-            )}
+              <input 
+                className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[14px] text-white placeholder:text-white/30 px-2 min-w-0 ${!canChat ? 'opacity-20' : ''}`} 
+                placeholder={!canChat ? "Chat locked" : (previewUrls.length > 0 ? "Add a caption..." : "Type something here...")}
+                type="text"
+                value={input}
+                disabled={!canChat}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              />
+              {!canChat ? (
+                <button 
+                  onClick={() => setShowSubModal(true)}
+                  className="absolute inset-0 bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white font-black text-[12px] uppercase tracking-widest transition-all z-20"
+                >
+                  Subscribe to reply
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSend}
+                  disabled={!input.trim() && selectedFiles.length === 0}
+                  className={`w-9 h-9 flex-none flex items-center justify-center rounded-full transition-all duration-300 relative z-10 ${input.trim() || selectedFiles.length > 0 ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 scale-100' : 'bg-transparent text-pink-500/50 scale-90'}`}
+                >
+                  <Send size={16} className={`${input.trim() || selectedFiles.length > 0 ? 'ml-0.5' : ''} shrink-0`} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
         )}

@@ -171,13 +171,13 @@ export default function SettingsPage() {
             {view === "account-info" && (
               <motion.div key="account-info" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="px-4 flex flex-col gap-6 w-full">
                 <div className="bg-[#1a1a1a] rounded-3xl overflow-hidden border border-white/5">
-                  <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
-                    <span className="font-bold text-white">Email</span>
-                    <span className="text-white/60 text-sm">{user?.primaryEmailAddress?.emailAddress}</span>
+                  <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 gap-4">
+                    <span className="font-bold text-white shrink-0">Email</span>
+                    <span className="text-white/60 text-sm truncate text-right">{user?.primaryEmailAddress?.emailAddress}</span>
                   </div>
-                  <div className="flex items-center justify-between px-6 py-5">
-                    <span className="font-bold text-white">Joined</span>
-                    <span className="text-white/60 text-sm">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "5/14/2026"}</span>
+                  <div className="flex items-center justify-between px-6 py-5 gap-4">
+                    <span className="font-bold text-white shrink-0">Joined</span>
+                    <span className="text-white/60 text-sm truncate text-right">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "5/14/2026"}</span>
                   </div>
                 </div>
               </motion.div>
@@ -300,28 +300,28 @@ export default function SettingsPage() {
 
 function SettingsItem({ icon, label, onClick, isDestructive }: { icon?: React.ReactNode, label: string, onClick?: () => void, isDestructive?: boolean }) {
   return (
-    <button onClick={onClick} className="w-full flex items-center justify-between px-5 py-4 border-b border-white/5 last:border-0 hover:bg-white/2 transition-colors group">
-      <div className="flex items-center gap-4">
+    <button onClick={onClick} className="w-full flex items-center justify-between px-5 py-4 border-b border-white/5 last:border-0 hover:bg-white/2 transition-colors group overflow-hidden">
+      <div className="flex items-center gap-4 overflow-hidden flex-1">
         {icon && (
-          <div className={`${isDestructive ? 'text-red-500' : 'text-white/60 group-hover:text-white'} transition-colors`}>
+          <div className={`${isDestructive ? 'text-red-500' : 'text-white/60 group-hover:text-white'} transition-colors shrink-0`}>
             {icon}
           </div>
         )}
-        <span className={`font-semibold ${isDestructive ? 'text-red-500' : 'text-white/90 group-hover:text-white'} transition-colors`}>
+        <span className={`font-semibold ${isDestructive ? 'text-red-500' : 'text-white/90 group-hover:text-white'} transition-colors truncate text-left`}>
           {label}
         </span>
       </div>
-      <ChevronRight size={16} className={`${isDestructive ? 'text-red-500/40' : 'text-white/20 group-hover:text-white'} transition-colors`} />
+      <ChevronRight size={16} className={`${isDestructive ? 'text-red-500/40' : 'text-white/20 group-hover:text-white'} transition-colors shrink-0 ml-2`} />
     </button>
   );
 }
 
 function ToggleItem({ icon, label, active, onToggle }: { icon: React.ReactNode, label: string, active: boolean, onToggle: () => void }) {
   return (
-    <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 last:border-0">
-      <div className="flex items-center gap-4">
-        <div className="text-white/60">{icon}</div>
-        <span className="font-semibold">{label}</span>
+    <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 last:border-0 gap-4 overflow-hidden">
+      <div className="flex items-center gap-4 overflow-hidden flex-1">
+        <div className="text-white/60 shrink-0">{icon}</div>
+        <span className="font-semibold truncate">{label}</span>
       </div>
       <button 
         onClick={onToggle}

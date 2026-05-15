@@ -27,18 +27,24 @@ export default function ClerkSupabaseSync() {
         if (!existingProfile) {
           console.log("Supabase Sync: User not found, creating profile...");
           const { error: insertError } = await supabase
-            .from("profiles") // Reverted to plural
+            .from("profiles")
             .insert([
               { 
                 id: user.id, 
                 email: user.primaryEmailAddress?.emailAddress,
                 is_subscribed: false,
+                is_following: false,
                 subscription_status: 'free'
               },
             ]);
           
           if (insertError) {
-            console.error("Supabase Sync: Insert error:", insertError);
+            console.error("Supabase Sync: Insert error details:", {
+              message: insertError.message,
+              details: insertError.details,
+              hint: insertError.hint,
+              code: insertError.code
+            });
           } else {
             console.log("Supabase Sync: Success! User synced.");
           }
