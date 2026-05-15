@@ -8,21 +8,30 @@ import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
+import { useProfile } from "@/hooks/useProfile";
+import SubscriptionModal from "@/components/SubscriptionModal";
 
 export default function ProfilePage() {
+  const { profile, toggleFollow, updateSubscription } = useProfile();
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [activeTab, setActiveTab] = useState<"posts" | "media">("posts");
-  const [isFollowing, setIsFollowing] = useState(true);
+  const [showSubModal, setShowSubModal] = useState(false);
 
-  const handleFollowClick = () => {
+  const isFollowing = profile?.is_following ?? false;
+
+  const handleFollowClick = async () => {
     if (!isSignedIn) {
       router.push("/join");
     } else {
-      setIsFollowing(!isFollowing);
-      console.log(isFollowing ? "Unfollowed!" : "Followed!");
+      await toggleFollow(!isFollowing);
     }
+  };
+
+  const handleCheckout = async (option: string) => {
+    await updateSubscription(true, 'active');
+    setShowSubModal(false);
   };
 
   if (!isLoaded) return null;
@@ -271,7 +280,7 @@ export default function ProfilePage() {
                         <ImageIcon size={16} className="text-white/80" />
                         <span className="text-xs font-medium">1 Image</span>
                       </div>
-                      <button onClick={handleFollowClick} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
+                      <button onClick={() => setShowSubModal(true)} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
                         View image
                       </button>
                     </div>
@@ -321,7 +330,7 @@ export default function ProfilePage() {
                         <ImageIcon size={16} className="text-white/80" />
                         <span className="text-xs font-medium">2 Images</span>
                       </div>
-                      <button onClick={handleFollowClick} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
+                      <button onClick={() => setShowSubModal(true)} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
                         View image
                       </button>
                     </div>
@@ -371,7 +380,7 @@ export default function ProfilePage() {
                         <ImageIcon size={16} className="text-white/80" />
                         <span className="text-xs font-medium">1 Image</span>
                       </div>
-                      <button onClick={handleFollowClick} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
+                      <button onClick={() => setShowSubModal(true)} className="bg-white text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-neutral-200 transition-colors w-full max-w-[160px]">
                         View image
                       </button>
                     </div>
@@ -434,6 +443,12 @@ export default function ProfilePage() {
         </main>
 
         <BottomNav />
+        
+        <SubscriptionModal 
+          isOpen={showSubModal} 
+          onClose={() => setShowSubModal(false)} 
+          onCheckout={handleCheckout} 
+        />
 
       </div>
     </div>

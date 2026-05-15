@@ -4,13 +4,14 @@ import { motion } from "framer-motion";
 import { User as UserIcon, Settings, X, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { generateRandomName, getInitials } from "@/lib/user-utils";
 
 export default function MenuPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const [displayName, setDisplayName] = useState("");
   const [initials, setInitials] = useState("");
 
@@ -128,6 +129,26 @@ export default function MenuPage() {
               </Link>
             </motion.div>
           ))}
+          
+          <motion.div
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            <button
+              onClick={() => signOut(() => router.push("/join"))}
+              className="w-full flex items-center justify-between p-4 rounded-2xl bg-red-500/5 hover:bg-red-500/10 transition-all group border border-red-500/10 mt-2"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500/60 group-hover:text-red-500 transition-all duration-300">
+                  <X size={24} />
+                </div>
+                <span className="text-lg font-semibold text-red-500/80 group-hover:text-red-500 transition-colors">
+                  Logout
+                </span>
+              </div>
+            </button>
+          </motion.div>
         </nav>
 
         {/* Footer info */}

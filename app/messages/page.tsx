@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, MoreVertical, Zap, Heart, Sparkles, EyeOff, Info, CheckCheck, Plus, Send, BellOff, Archive, X, ShieldCheck, MessageCircle, Clock, Check, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { useProfile } from "@/hooks/useProfile";
 
 interface Message {
   id: string;
@@ -26,8 +27,12 @@ export default function MessagesPage() {
   ]);
 
   const [input, setInput] = useState("");
+  const { profile, loading: profileLoading, updateSubscription } = useProfile();
   const [isExpired, setIsExpired] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  
+  // A user is "active" if they are subscribed OR if their trial hasn't expired yet
+  const canChat = profile?.is_subscribed || !isExpired;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
   const [selectedOption, setSelectedOption] = useState<'monthly' | 'onetime'>('monthly');
@@ -93,7 +98,7 @@ export default function MessagesPage() {
   }, [messages]);
 
   const handleSend = () => {
-    if (!input.trim() || isExpired) return;
+    if (!input.trim() || !canChat) return;
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -108,6 +113,18 @@ export default function MessagesPage() {
 
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(newMessage.text);
+    }
+  };
+
+  const handleCheckout = async () => {
+    try {
+      // In a real app, you'd process payment here first
+      await updateSubscription(true, 'active');
+      setShowSubModal(false);
+      setSubStep('options');
+      // Maybe show a success toast or message
+    } catch (err) {
+      console.error("Checkout failed:", err);
     }
   };
 
@@ -138,7 +155,14 @@ export default function MessagesPage() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                   <span className="font-medium text-[11px] text-neutral-400 uppercase tracking-wider">Online</span>
                 </div>
-                {!isExpired && timeLeft !== null && (
+                {profile?.is_subscribed ? (
+                  <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <ShieldCheck size={10} className="text-emerald-500" />
+                    <span className="font-bold text-[10px] text-emerald-500 uppercase tracking-tighter">
+                      Subscriber
+                    </span>
+                  </div>
+                ) : !isExpired && timeLeft !== null && (
                   <div className="flex items-center gap-1.5 bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-500/20">
                     <Zap size={10} className="text-pink-500 fill-pink-500" />
                     <span className="font-bold text-[10px] text-pink-500 uppercase tracking-tighter">
@@ -390,6 +414,7 @@ export default function MessagesPage() {
 
                       <div className="flex flex-col items-center gap-5">
                         <button 
+                          onClick={handleCheckout}
                           className="w-full bg-[#0070ba] hover:bg-[#005ea6] text-white font-black text-sm uppercase tracking-widest py-5 rounded-full transition-all active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-[#0070ba]/20"
                         >
                           <img src="https://api.iconify.design/logos:paypal.svg?color=white" alt="PayPal" className="h-4.5 brightness-0 invert" />
@@ -479,8 +504,8 @@ export default function MessagesPage() {
                   <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-md border border-white/20">
                     <img src="/img/ailani_1.jpg" alt="Ailani" className="w-full h-full object-cover" />
                   </div>
-                  <div className="bg-neutral-900 border border-white/10 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm relative">
-                    <p className="text-[16px] text-white leading-relaxed">{msg.text}</p>
+                  <div className="bg-neutral-900 border border-white/10 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm relative min-w-0">
+                    <p className="text-[16px] text-white leading-relaxed wrap-break-words whitespace-pre-wrap">{msg.text}</p>
                     <span className="block text-[10px] text-right mt-1 text-neutral-400">{msg.time}</span>
                   </div>
                 </div>
@@ -489,8 +514,8 @@ export default function MessagesPage() {
 
             return (
               <div key={msg.id} className="flex flex-col gap-2 items-end">
-                <div className="bg-pink-600 text-white px-4 py-3 rounded-2xl rounded-br-none shadow-lg max-w-[80%]">
-                  <p className="text-[16px] leading-relaxed">{msg.text}</p>
+                <div className="bg-pink-600 text-white px-4 py-3 rounded-2xl rounded-br-none shadow-lg max-w-[80%] min-w-0">
+                  <p className="text-[16px] leading-relaxed wrap-break-words whitespace-pre-wrap">{msg.text}</p>
                   <div className="flex items-center justify-end gap-1 mt-1">
                     <span className="text-[10px] text-white/70">{msg.time}</span>
                     <CheckCheck size={14} className="text-white/90" />
@@ -523,19 +548,19 @@ export default function MessagesPage() {
         {activeTab === "messages" && (
         <div className="absolute bottom-0 left-0 w-full z-50 p-5 bg-linear-to-t from-black via-black/90 to-transparent pb-10">
           <div className="bg-neutral-900 rounded-full p-2 flex items-center gap-2 border border-white/10 shadow-xl overflow-hidden relative">
-            <button disabled={isExpired} className={`w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors shrink-0 text-white ${isExpired ? 'opacity-20' : ''}`}>
+            <button disabled={!canChat} className={`w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors shrink-0 text-white ${!canChat ? 'opacity-20' : ''}`}>
               <Plus size={24} />
             </button>
             <input 
-              className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[16px] text-white placeholder:text-neutral-500 px-2 ${isExpired ? 'opacity-20' : ''}`} 
-              placeholder={isExpired ? "Chat locked" : "Type something here"}
+              className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[16px] text-white placeholder:text-neutral-500 px-2 ${!canChat ? 'opacity-20' : ''}`} 
+              placeholder={!canChat ? "Chat locked" : "Type something here"}
               type="text"
               value={input}
-              disabled={isExpired}
+              disabled={!canChat}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             />
-            {isExpired ? (
+            {!canChat ? (
               <button 
                 onClick={() => setShowSubModal(true)}
                 className="absolute inset-0 bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white font-black text-sm uppercase tracking-widest transition-all z-20"

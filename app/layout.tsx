@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 import BottomNav from "@/components/BottomNav";
 import OneSignalHandler from "@/components/OneSignalHandler";
+import ClerkSupabaseSync from "@/components/ClerkSupabaseSync";
 
 export default function RootLayout({
   children,
@@ -56,6 +57,7 @@ export default function RootLayout({
         </head>
         <body className="min-h-full flex flex-col bg-black text-white">
           <OneSignalHandler />
+          <ClerkSupabaseSync />
           {children}
           <BottomNav />
         </body>

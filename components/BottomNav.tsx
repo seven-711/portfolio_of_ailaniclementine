@@ -36,19 +36,6 @@ export default function BottomNav() {
 
   if (pathname === "/" || pathname === "/messages") return null;
 
-  if (isSessionExpired) {
-    return (
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md border-t border-white/5 bg-black/90 backdrop-blur-2xl px-5 py-6 z-50 flex justify-center">
-        <button 
-          onClick={() => router.push("/settings")}
-          className="w-full bg-pink-500 hover:bg-pink-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-pink-500/20 active:scale-95 transition-all text-sm uppercase tracking-widest"
-        >
-          Subscribe to Ailani
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50">
       <AnimatePresence>
