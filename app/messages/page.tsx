@@ -461,7 +461,7 @@ export default function MessagesPage() {
 
         {/* Chat Canvas */}
         {activeTab === "messages" && (
-        <section className="flex-1 px-5 flex flex-col gap-6 overflow-y-auto pt-2 pb-6">
+        <section className="flex-1 px-5 flex flex-col gap-6 overflow-y-auto pt-2 pb-32">
           <div className="text-center mt-2">
             <span className="font-semibold text-[12px] text-neutral-500 uppercase tracking-widest">Today</span>
           </div>
@@ -546,14 +546,14 @@ export default function MessagesPage() {
 
         {/* Bottom Input Bar - only visible on Messages tab */}
         {activeTab === "messages" && (
-        <div className="absolute bottom-0 left-0 w-full z-50 p-5 bg-linear-to-t from-black via-black/90 to-transparent pb-10">
-          <div className="bg-neutral-900 rounded-full p-2 flex items-center gap-2 border border-white/10 shadow-xl overflow-hidden relative">
-            <button disabled={!canChat} className={`w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors shrink-0 text-white ${!canChat ? 'opacity-20' : ''}`}>
-              <Plus size={24} />
+        <div className="absolute bottom-0 left-0 w-full z-50 p-4 bg-linear-to-t from-black via-black/90 to-transparent pb-8">
+          <div className="bg-white/5 backdrop-blur-xl rounded-full p-1.5 flex items-center gap-1 border border-white/10 shadow-2xl overflow-hidden relative group transition-all duration-300 focus-within:bg-white/10 focus-within:border-white/20">
+            <button disabled={!canChat} className={`w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all shrink-0 text-white/60 hover:text-white ${!canChat ? 'opacity-20' : ''}`}>
+              <Plus size={20} />
             </button>
             <input 
-              className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[16px] text-white placeholder:text-neutral-500 px-2 ${!canChat ? 'opacity-20' : ''}`} 
-              placeholder={!canChat ? "Chat locked" : "Type something here"}
+              className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[14px] text-white placeholder:text-white/30 px-2 min-w-0 ${!canChat ? 'opacity-20' : ''}`} 
+              placeholder={!canChat ? "Chat locked" : "Type something here..."}
               type="text"
               value={input}
               disabled={!canChat}
@@ -563,16 +563,17 @@ export default function MessagesPage() {
             {!canChat ? (
               <button 
                 onClick={() => setShowSubModal(true)}
-                className="absolute inset-0 bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white font-black text-sm uppercase tracking-widest transition-all z-20"
+                className="absolute inset-0 bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white font-black text-[12px] uppercase tracking-widest transition-all z-20"
               >
                 Subscribe to reply
               </button>
             ) : (
               <button 
                 onClick={handleSend}
-                className="w-11 h-11 flex-none flex items-center justify-center rounded-full bg-pink-500 text-white shadow-lg hover:bg-pink-600 active:scale-95 transition-all duration-300 relative z-10"
+                disabled={!input.trim()}
+                className={`w-9 h-9 flex-none flex items-center justify-center rounded-full transition-all duration-300 relative z-10 ${input.trim() ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20 scale-100' : 'bg-transparent text-pink-500/50 scale-90'}`}
               >
-                <Send size={18} className="ml-0.5 shrink-0" />
+                <Send size={16} className={`${input.trim() ? 'ml-0.5' : ''} shrink-0`} />
               </button>
             )}
           </div>
