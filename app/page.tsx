@@ -185,9 +185,9 @@ export function ExclusiveContentCard() {
 
         {/* Default Content */}
         <div className={`relative z-10 p-8 flex flex-col items-center justify-center text-white min-h-[220px] transition-opacity duration-300 ${open ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-          <p className="font-title-md text-center text-white drop-shadow-lg text-3xl font-bold">
+          <div className="font-title-md text-center text-white drop-shadow-lg text-3xl font-bold">
             exclusive content <span className="block text-gray opacity-50 text-body-sm font-bold mt-1 drop-shadow-md">(50% off - limited time only)</span>
-          </p>
+          </div>
         </div>
 
         {/* Overlay Content */}

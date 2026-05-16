@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, MoreVertical, Zap, Heart, Sparkles, EyeOff, Info, CheckCheck, Plus, Send, BellOff, Archive, X, ShieldCheck, MessageCircle, Clock, Check, Image as ImageIcon, Lock as LockIcon } from "lucide-react";
+import { ChevronLeft, MoreVertical, MoreHorizontal, Zap, Heart, Sparkles, EyeOff, Info, CheckCheck, Plus, Send, BellOff, Archive, X, ShieldCheck, MessageCircle, Clock, Check, Image as ImageIcon, Lock as LockIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProfile } from "@/hooks/useProfile";
@@ -17,6 +17,7 @@ interface Message {
   playbackId?: string; // For videos
   time: string;
   type: "text" | "photo" | "video" | "notification";
+  isUnsent?: boolean;
 }
 
 export default function MessagesPage() {
@@ -28,6 +29,11 @@ export default function MessagesPage() {
   const { profile, loading: profileLoading, updateSubscription } = useProfile();
   const [isExpired, setIsExpired] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [hasMounted, setHasMounted] = useState(false);
+  
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
   
   // A user is "active" if they are subscribed OR if their trial hasn't expired yet
   const canChat = profile?.is_subscribed || !isExpired;
@@ -42,6 +48,29 @@ export default function MessagesPage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [longPressedMessageId, setLongPressedMessageId] = useState<string | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleUnsend = (id: string) => {
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, isUnsent: true } : m));
+    setLongPressedMessageId(null);
+  };
+
+  const startLongPress = (id: string) => {
+    // Only allow long press on user messages
+    const msg = messages.find(m => m.id === id);
+    if (msg?.sender !== "user") return;
+
+    longPressTimer.current = setTimeout(() => {
+      setLongPressedMessageId(id);
+    }, 600);
+  };
+
+  const endLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+  };
 
   useEffect(() => {
     const checkSession = () => {
@@ -289,7 +318,7 @@ export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center selection:bg-pink-500/30">
       
-      <main className="w-full max-w-md min-h-screen flex flex-col relative pb-32 overflow-hidden bg-black">
+      <main className="w-full max-w-md h-screen flex flex-col relative overflow-hidden bg-black">
         
         {/* Background atmospheric glow */}
         <div className="absolute top-[-100px] left-0 right-0 h-[400px] bg-cover bg-center opacity-20 blur-[60px] -z-10"
@@ -320,7 +349,7 @@ export default function MessagesPage() {
                       Subscriber
                     </span>
                   </div>
-                ) : !isExpired && timeLeft !== null && (
+                ) : (hasMounted && !isExpired && timeLeft !== null) && (
                   <div className="flex items-center gap-1.5 bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-500/20">
                     <Zap size={10} className="text-pink-500 fill-pink-500" />
                     <span className="font-bold text-[10px] text-pink-500 uppercase tracking-tighter">
@@ -620,12 +649,32 @@ export default function MessagesPage() {
 
         {/* Chat Canvas */}
         {activeTab === "messages" && (
-        <section className="flex-1 px-5 flex flex-col gap-6 overflow-y-auto pt-2 pb-32">
+        <section className="flex-1 px-5 flex flex-col gap-6 overflow-y-auto pt-2 pb-32 relative">
+          {/* Close unsend menu when clicking elsewhere */}
+          {longPressedMessageId && (
+            <div 
+              className="fixed inset-0 z-50" 
+              onClick={() => setLongPressedMessageId(null)}
+            />
+          )}
           <div className="text-center mt-2">
             <span className="font-semibold text-[12px] text-neutral-500 uppercase tracking-widest">Today</span>
           </div>
 
           {messages.map((msg) => {
+            if (msg.isUnsent) {
+              const isUser = msg.sender === "user";
+              return (
+                <div key={msg.id} className={`${isUser ? 'self-end' : 'self-start'} max-w-[85%]`}>
+                  <div className="bg-neutral-900/50 border border-white/5 px-4 py-2 rounded-2xl shadow-inner">
+                    <p className="text-[13px] text-white/30 font-medium italic">
+                      {isUser ? "You unsent a message" : "This message was unsent"}
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+
             if (msg.type === "notification") {
               return (
                 <div key={msg.id} className="ml-10 max-w-[85%]">
@@ -644,23 +693,66 @@ export default function MessagesPage() {
             if (msg.type === "photo") {
               const isUser = msg.sender === "user";
               return (
-                <div key={msg.id} className={`${isUser ? 'self-end' : 'ml-10'} max-w-[70%]`}>
-                  <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 group cursor-pointer shadow-xl">
-                    {!isUser && !(isSignedIn && profile?.is_subscribed) && (
-                      <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center">
-                        <div className="w-12 h-12 rounded-full border border-white/50 flex items-center justify-center mb-4 bg-black/40">
-                          <EyeOff size={24} className="text-white" />
-                        </div>
-                        <p className="font-bold text-white drop-shadow-md text-[20px]">Your eyes only</p>
-                      </div>
+                <div 
+                  key={msg.id} 
+                  className={`${isUser ? 'self-end' : 'ml-10'} max-w-[70%] relative group`}
+                  onPointerDown={() => isUser && startLongPress(msg.id)}
+                  onPointerUp={endLongPress}
+                  onPointerLeave={endLongPress}
+                  onContextMenu={(e) => {
+                    if (isUser) {
+                      e.preventDefault();
+                      setLongPressedMessageId(msg.id);
+                    }
+                  }}
+                >
+                  <AnimatePresence>
+                    {longPressedMessageId === msg.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                        className="absolute -top-12 right-0 z-[60] bg-red-500 text-white px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2 cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnsend(msg.id);
+                        }}
+                      >
+                        <Trash2 size={14} className="fill-white/20" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Unsend</span>
+                      </motion.div>
                     )}
-                    <OptimizedImage 
-                      src={msg.url || "/img/ailani_blur_1.png"}
-                      alt="Media content" 
-                      width={400}
-                      height={500}
-                      className={`w-full h-full object-cover ${!isUser && !(isSignedIn && profile?.is_subscribed) ? 'scale-110 filter blur-sm' : ''}`} 
-                    />
+                  </AnimatePresence>
+                  <div className="flex items-center gap-2">
+                    {isUser && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLongPressedMessageId(msg.id === longPressedMessageId ? null : msg.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/10 rounded-full text-white/40 hover:text-white shrink-0"
+                        title="Message options"
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
+                    )}
+                    <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 group-hover:border-white/20 cursor-pointer shadow-xl transition-colors">
+                      {!isUser && !(isSignedIn && profile?.is_subscribed) && (
+                        <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center">
+                          <div className="w-12 h-12 rounded-full border border-white/50 flex items-center justify-center mb-4 bg-black/40">
+                            <EyeOff size={24} className="text-white" />
+                          </div>
+                          <p className="font-bold text-white drop-shadow-md text-[20px]">Your eyes only</p>
+                        </div>
+                      )}
+                      <OptimizedImage 
+                        src={msg.url || "/img/ailani_blur_1.png"}
+                        alt="Media content" 
+                        width={400}
+                        height={500}
+                        className={`w-full h-full object-cover ${!isUser && !(isSignedIn && profile?.is_subscribed) ? 'scale-110 filter blur-sm' : ''}`} 
+                      />
+                    </div>
                   </div>
                   <div className="flex items-center justify-end gap-1 mt-1">
                     <span className="text-[10px] text-neutral-400">{msg.time}</span>
@@ -673,30 +765,73 @@ export default function MessagesPage() {
             if (msg.type === "video") {
               const isUser = msg.sender === "user";
               return (
-                <div key={msg.id} className={`${isUser ? 'self-end' : 'ml-10'} max-w-[85%] w-full`}>
-                  <div className="relative rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 shadow-xl">
-                    {!isUser && !(isSignedIn && profile?.is_subscribed) && (
-                      <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-2xl flex flex-col items-center justify-center p-6 text-center">
-                        <div className="w-12 h-12 rounded-full border border-white/50 flex items-center justify-center mb-4 bg-black/40">
-                          <LockIcon size={24} className="text-white" />
+                <div 
+                  key={msg.id} 
+                  className={`${isUser ? 'self-end' : 'ml-10'} max-w-[85%] w-full relative group`}
+                  onPointerDown={() => isUser && startLongPress(msg.id)}
+                  onPointerUp={endLongPress}
+                  onPointerLeave={endLongPress}
+                  onContextMenu={(e) => {
+                    if (isUser) {
+                      e.preventDefault();
+                      setLongPressedMessageId(msg.id);
+                    }
+                  }}
+                >
+                  <AnimatePresence>
+                    {longPressedMessageId === msg.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                        className="absolute -top-12 right-0 z-[60] bg-red-500 text-white px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2 cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnsend(msg.id);
+                        }}
+                      >
+                        <Trash2 size={14} className="fill-white/20" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Unsend</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <div className="flex items-center gap-2">
+                    {isUser && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLongPressedMessageId(msg.id === longPressedMessageId ? null : msg.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/10 rounded-full text-white/40 hover:text-white shrink-0"
+                        title="Message options"
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
+                    )}
+                    <div className="relative rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 group-hover:border-white/20 shadow-xl transition-colors">
+                      {!isUser && !(isSignedIn && profile?.is_subscribed) && (
+                        <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-2xl flex flex-col items-center justify-center p-6 text-center">
+                          <div className="w-12 h-12 rounded-full border border-white/50 flex items-center justify-center mb-4 bg-black/40">
+                            <LockIcon size={24} className="text-white" />
+                          </div>
+                          <p className="font-bold text-white drop-shadow-md text-[20px]">Premium Video</p>
+                          <p className="text-white/60 text-xs mt-2 uppercase tracking-widest font-black">Subscribe to watch</p>
                         </div>
-                        <p className="font-bold text-white drop-shadow-md text-[20px]">Premium Video</p>
-                        <p className="text-white/60 text-xs mt-2 uppercase tracking-widest font-black">Subscribe to watch</p>
-                      </div>
-                    )}
-                    {!msg.playbackId ? (
-                      <div className="aspect-video bg-black/80 flex flex-col items-center justify-center p-6 text-center gap-3">
-                        <div className="w-10 h-10 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin" />
-                        <p className="text-[14px] font-bold text-white/60 uppercase tracking-widest">Processing Video...</p>
-                      </div>
-                    ) : (
-                      <OptimizedVideo 
-                        playbackId={msg.playbackId || ""}
-                        autoPlay={false}
-                        muted={true}
-                        className={!isUser && !(isSignedIn && profile?.is_subscribed) ? 'filter blur-xl opacity-50' : ''}
-                      />
-                    )}
+                      )}
+                      {!msg.playbackId ? (
+                        <div className="aspect-video bg-black/80 flex flex-col items-center justify-center p-6 text-center gap-3">
+                          <div className="w-10 h-10 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin" />
+                          <p className="text-[14px] font-bold text-white/60 uppercase tracking-widest">Processing Video...</p>
+                        </div>
+                      ) : (
+                        <OptimizedVideo 
+                          playbackId={msg.playbackId || ""}
+                          autoPlay={false}
+                          muted={true}
+                          className={!isUser && !(isSignedIn && profile?.is_subscribed) ? 'filter blur-xl opacity-50' : ''}
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center justify-end gap-1 mt-1">
                     <span className="text-[10px] text-neutral-400">{msg.time}</span>
@@ -721,12 +856,51 @@ export default function MessagesPage() {
             }
 
             return (
-              <div key={msg.id} className="flex flex-col gap-2 items-end">
-                <div className="bg-pink-600 text-white px-4 py-3 rounded-2xl rounded-br-none shadow-lg max-w-[80%] min-w-0">
-                  <p className="text-[16px] leading-relaxed wrap-break-word whitespace-pre-wrap">{msg.text}</p>
-                  <div className="flex items-center justify-end gap-1 mt-1">
-                    <span className="text-[10px] text-white/70">{msg.time}</span>
-                    <CheckCheck size={14} className="text-white/90" />
+              <div 
+                key={msg.id} 
+                className="flex flex-col gap-2 items-end relative group"
+                onPointerDown={() => startLongPress(msg.id)}
+                onPointerUp={endLongPress}
+                onPointerLeave={endLongPress}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setLongPressedMessageId(msg.id);
+                }}
+              >
+                <AnimatePresence>
+                  {longPressedMessageId === msg.id && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                      className="absolute -top-12 right-0 z-[60] bg-red-500 text-white px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2 cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnsend(msg.id);
+                      }}
+                    >
+                      <Trash2 size={14} className="fill-white/20" />
+                      <span className="text-xs font-bold uppercase tracking-widest">Unsend</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLongPressedMessageId(msg.id === longPressedMessageId ? null : msg.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-white/10 rounded-full text-white/40 hover:text-white shrink-0"
+                    title="Message options"
+                  >
+                    <MoreHorizontal size={18} />
+                  </button>
+                  <div className="bg-pink-600 text-white px-4 py-3 rounded-2xl rounded-br-none shadow-lg max-w-[80%] min-w-0 group-hover:bg-pink-500 transition-colors">
+                    <p className="text-[16px] leading-relaxed wrap-break-word whitespace-pre-wrap">{msg.text}</p>
+                    <div className="flex items-center justify-end gap-1 mt-1">
+                      <span className="text-[10px] text-white/70">{msg.time}</span>
+                      <CheckCheck size={14} className="text-white/90" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -766,7 +940,7 @@ export default function MessagesPage() {
 
         {/* Bottom Input Bar - only visible on Messages tab */}
         {activeTab === "messages" && (
-        <div className="absolute bottom-0 left-0 w-full z-50 p-4 bg-linear-to-t from-black via-black/90 to-transparent pb-8">
+        <div className="shrink-0 w-full z-50 p-4 bg-linear-to-t from-black via-black/90 to-transparent pb-8">
           <input 
             type="file" 
             ref={fileInputRef} 

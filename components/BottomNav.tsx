@@ -12,6 +12,11 @@ export default function BottomNav() {
   const router = useRouter();
   const [isSessionExpired, setIsSessionExpired] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     const checkSession = () => {
@@ -39,7 +44,7 @@ export default function BottomNav() {
   return (
     <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50">
       <AnimatePresence>
-        {!isSessionExpired && timeLeft !== null && timeLeft > 0 && (
+        {hasMounted && !isSessionExpired && timeLeft !== null && timeLeft > 0 && (
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

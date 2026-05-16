@@ -192,14 +192,41 @@ export default function ProfilePage() {
               transition={{ delay: 0.55 }}
               className="mt-5"
             >
-              <Link href="/join">
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full py-3.5 rounded-2xl bg-pink-500 hover:bg-pink-600 text-white font-bold text-sm tracking-wide transition-colors shadow-lg shadow-pink-500/20"
-                >
-                  Join for free
-                </motion.button>
-              </Link>
+              {isSignedIn ? (
+                <div className="flex gap-2 w-full">
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowSubModal(true)}
+                    className="flex-[1.8] h-[52px] px-6 rounded-full bg-pink-500 hover:bg-pink-600 text-white font-bold flex items-center justify-between shadow-lg"
+                  >
+                    <span className="text-[15px] tracking-tight">Join now</span>
+                    <span className="text-[15px] tracking-tight">$14.99/month</span>
+                  </motion.button>
+                  
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowSubModal(true)}
+                    className="flex-1 h-[52px] bg-white hover:bg-neutral-50 rounded-full flex items-center justify-center shadow-lg border border-white/10"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <svg viewBox="0 0 24 24" className="h-5 w-auto" preserveAspectRatio="xMidYMid meet">
+                        <path fill="#003087" d="M17.272 6.72c-.104-1.076-.411-1.956-.921-2.641-.509-.684-1.221-1.168-2.134-1.452-.912-.284-2.008-.426-3.287-.426h-4.706c-.347 0-.649.24-.727.577l-2.434 10.45c-.039.167.089.323.26.323h2.378c.347 0 .649-.24.727-.577l.635-2.727c.078-.337.38-.577.727-.577h.931c1.321 0 2.453-.131 3.396-.393s1.71-.676 2.301-1.242c.59-.567.994-1.298 1.213-2.193.125-.512.188-1.023.188-1.531 0-.6-.112-1.127-.338-1.583zm-4.14 2.802c-.135.551-.383.992-.743 1.325s-.832.569-1.417.708-1.325.209-2.221.209h-.615c-.201 0-.376.139-.422.333l-.63 2.704c-.021.092.05.179.144.179h.262c.319 0 .596-.221.667-.53l.635-2.727c.078-.337.38-.577.727-.577h.171c.71 0 1.332-.047 1.868-.142s.988-.266 1.356-.511.642-.589.822-1.032c.113-.277.169-.582.169-.915 0-.173-.016-.341-.049-.504l-.048.207c-.12.515-.31.916-.575 1.205zm5.556 1.15c-.104-1.076-.411-1.956-.921-2.641-.509-.684-1.221-1.168-2.134-1.452-.912-.284-2.008-.426-3.287-.426h-4.706c-.347 0-.649.24-.727.577l-2.434 10.45c-.039.167.089.323.26.323h2.378c.347 0 .649-.24.727-.577l.635-2.727c.078-.337.38-.577.727-.577h.931c1.321 0 2.453-.131 3.396-.393s1.71-.676 2.301-1.242c.59-.567.994-1.298 1.213-2.193.125-.512.188-1.023.188-1.531 0-.6-.112-1.127-.338-1.583zm-4.14 2.802c-.135.551-.383.992-.743 1.325s-.832.569-1.417.708-1.325.209-2.221.209h-.615c-.201 0-.376.139-.422.333l-.63 2.704c-.021.092.05.179.144.179h.262c.319 0 .596-.221.667-.53l.635-2.727c.078-.337.38-.577.727-.577h.171c.71 0 1.332-.047 1.868-.142s.988-.266 1.356-.511.642-.589.822-1.032c.113-.277.169-.582.169-.915 0-.173-.016-.341-.049-.504l-.048.207c-.12.515-.31.916-.575 1.205z" />
+                        <path fill="#009cde" d="M21.572 6.72c-.104-1.076-.411-1.956-.921-2.641-.509-.684-1.221-1.168-2.134-1.452-.912-.284-2.008-.426-3.287-.426h-4.706c-.347 0-.649.24-.727.577l-2.434 10.45c-.039.167.089.323.26.323h2.378c.347 0 .649-.24.727-.577l.635-2.727c.078-.337.38-.577.727-.577h.931c1.321 0 2.453-.131 3.396-.393s1.71-.676 2.301-1.242c.59-.567.994-1.298 1.213-2.193.125-.512.188-1.023.188-1.531 0-.6-.112-1.127-.338-1.583zm-4.14 2.802c-.135.551-.383.992-.743 1.325s-.832.569-1.417.708-1.325.209-2.221.209h-.615c-.201 0-.376.139-.422.333l-.63 2.704c-.021.092.05.179.144.179h.262c.319 0 .596-.221.667-.53l.635-2.727c.078-.337.38-.577.727-.577h.171c.71 0 1.332-.047 1.868-.142s.988-.266 1.356-.511.642-.589.822-1.032c.113-.277.169-.582.169-.915 0-.173-.016-.341-.049-.504l-.048.207c-.12.515-.31.916-.575 1.205z" transform="translate(-4.3 2.3)"/>
+                      </svg>
+                      <span className="text-[#003087] font-black italic text-xl tracking-tighter">PayPal</span>
+                    </div>
+                  </motion.button>
+                </div>
+              ) : (
+                <Link href="/join">
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    className="w-full py-3.5 rounded-2xl bg-pink-500 hover:bg-pink-600 text-white font-bold text-sm tracking-wide transition-colors shadow-lg shadow-pink-500/20"
+                  >
+                    Join for free
+                  </motion.button>
+                </Link>
+              )}
             </motion.div>
           </motion.div>
 
